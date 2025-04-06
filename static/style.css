@@ -1,17 +1,18 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
+    background-color: #f0f0f0;
+    color: #333;
     margin: 0;
     padding: 0;
 }
 
 .container {
-    width: 70%;
-    margin: 50px auto;
-    background-color: #ffffff;
+    width: 80%;
+    margin: 0 auto;
     padding: 20px;
+    background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 header {
@@ -19,8 +20,8 @@ header {
     margin-bottom: 20px;
 }
 
-header h1 {
-    font-size: 24px;
+h1 {
+    font-size: 2em;
     color: #003366;
 }
 
@@ -30,34 +31,36 @@ form {
 }
 
 .documento {
-    margin-bottom: 20px;
+    margin: 10px 0;
 }
 
 label {
-    font-weight: bold;
-    font-size: 14px;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    display: inline-block;
 }
 
-input[type="text"], input[type="file"] {
+input[type="file"],
+input[type="text"],
+input[type="checkbox"] {
     width: 100%;
     padding: 10px;
-    margin-top: 5px;
+    margin: 5px 0;
+    font-size: 1em;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
+    border-radius: 4px;
 }
 
 button {
-    padding: 12px;
+    padding: 12px 20px;
+    font-size: 1.2em;
     background-color: #003366;
-    color: white;
+    color: #fff;
     border: none;
-    border-radius: 5px;
-    font-size: 16px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s;
 }
 
 button:hover {
-    background-color: #002244;
+    background-color: #005599;
 }
