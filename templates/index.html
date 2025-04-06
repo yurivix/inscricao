@@ -20,14 +20,19 @@
                 </div>
                 {% endfor %}
             </div>
+
             <div class="documento">
-                <label for="nao_possui_reservista">Não possuo Certificado de Reservista (para homens)</label>
-                <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
+                <label for="nao_possui_reservista">
+                    <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
+                    Não possuo Certificado de Reservista (para homens)
+                </label>
             </div>
+
             <div class="documento">
                 <label for="nome_completo">Nome Completo</label>
                 <input type="text" name="nome_completo" id="nome_completo" required>
             </div>
+
             <div class="documento">
                 <button type="submit">Gerar PDF</button>
             </div>
