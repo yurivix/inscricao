@@ -12,21 +12,50 @@
         <h1>Envio de Documentos</h1>
         <p>Envie os documentos abaixo. Cada um deve ser enviado individualmente.</p>
 
-        <form action="/gerar_pdf" method="post" enctype="multipart/form-data">
-            <div class="formulario">
-                {% for doc in documentos %}
-                    <div class="campo-upload">
-                        <label for="arquivo{{ loop.index0 }}">{{ doc }}</label>
-                        <input type="file" name="arquivos" id="arquivo{{ loop.index0 }}" required>
-                        <input type="hidden" name="nomes[]" value="{{ doc }}">
-                    </div>
-                {% endfor %}
-            </div>
+        <div class="formulario">
+            {% for doc in documentos %}
+                <div class="campo-upload">
+                    <label for="arquivo{{ loop.index0 }}">{{ doc }}</label>
 
+                    {% if "Reservista" in doc %}
+                        <input type="checkbox" id="nao_possui{{ loop.index0 }}" onchange="toggleInput({{ loop.index0 }})">
+                        <label for="nao_possui{{ loop.index0 }}">Não possuo</label>
+                    {% endif %}
+
+                    <form action="/upload" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <input type="file" name="arquivo" id="arquivo{{ loop.index0 }}" {% if "Reservista" not in doc %}required{% endif %}>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if arquivos %}
             <div class="confirmacao">
-                <button type="submit">Gerar PDF Final</button>
+                <p><strong>Documentos enviados:</strong></p>
+                <ul>
+                    {% for nome in arquivos %}
+                        <li>{{ nome }}</li>
+                    {% endfor %}
+                </ul>
+                <form action="/gerar_pdf" method="post">
+                    <button type="submit">Gerar PDF Final</button>
+                </form>
             </div>
-        </form>
+        {% endif %}
     </div>
+
+    <script>
+        function toggleInput(index) {
+            const checkbox = document.getElementById("nao_possui" + index);
+            const input = document.getElementById("arquivo" + index);
+            input.disabled = checkbox.checked;
+            if (checkbox.checked) {
+                input.removeAttribute("required");
+            } else {
+                input.setAttribute("required", "required");
+            }
+        }
+    </script>
 </body>
 </html>
