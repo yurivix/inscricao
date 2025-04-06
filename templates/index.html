@@ -12,31 +12,21 @@
         <h1>Envio de Documentos</h1>
         <p>Envie os documentos abaixo. Cada um deve ser enviado individualmente.</p>
 
-        <div class="formulario">
-            {% for doc in documentos %}
-                <div class="campo-upload">
-                    <label for="arquivo{{ loop.index0 }}">{{ doc }}</label>
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="index" value="{{ loop.index0 }}">
-                        <input type="file" name="arquivo" id="arquivo{{ loop.index0 }}" onchange="this.form.submit()" required>
-                    </form>
-                </div>
-            {% endfor %}
-        </div>
-
-        {% if arquivos %}
-            <div class="confirmacao">
-                <p><strong>Documentos enviados:</strong></p>
-                <ul>
-                    {% for nome in arquivos %}
-                        <li>{{ nome }}</li>
-                    {% endfor %}
-                </ul>
-                <form action="/gerar_pdf" method="post">
-                    <button type="submit">Gerar PDF Final</button>
-                </form>
+        <form action="/gerar_pdf" method="post" enctype="multipart/form-data">
+            <div class="formulario">
+                {% for doc in documentos %}
+                    <div class="campo-upload">
+                        <label for="arquivo{{ loop.index0 }}">{{ doc }}</label>
+                        <input type="file" name="arquivos" id="arquivo{{ loop.index0 }}" required>
+                        <input type="hidden" name="nomes[]" value="{{ doc }}">
+                    </div>
+                {% endfor %}
             </div>
-        {% endif %}
+
+            <div class="confirmacao">
+                <button type="submit">Gerar PDF Final</button>
+            </div>
+        </form>
     </div>
 </body>
 </html>
