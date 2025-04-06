@@ -1,24 +1,25 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <title>Inscrição OAB-ES</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>Inscrição OAB-ES</h1>
-  <form id="formulario" enctype="multipart/form-data">
-    <div id="documentos-container"></div>
+  <div class="container">
+    <h1>Inscrição OAB-ES</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div id="inputsContainer"></div>
 
-    <label>
-      <input type="checkbox" id="nao_possui_reservista">
-      Não possuo Certificado de Reservista
-    </label>
+      <div class="checkbox-container">
+        <input type="checkbox" id="naoPossuiReservista" name="naoPossuiReservista">
+        <label for="naoPossuiReservista">Não possuo Certificado de Reservista</label>
+      </div>
 
-    <br><br>
-    <button type="submit">Gerar PDF Final</button>
-  </form>
-
-  <div id="mensagem"></div>
+      <button type="submit">Gerar PDF Final</button>
+      <p id="status"></p>
+    </form>
+  </div>
 
   <script>
     const documentos = [
@@ -43,49 +44,56 @@
       "Declaração de responsabilidade das informações"
     ];
 
-    const container = document.getElementById("documentos-container");
+    const inputsContainer = document.getElementById("inputsContainer");
 
-    documentos.forEach((doc, index) => {
+    documentos.forEach((doc, i) => {
       const div = document.createElement("div");
+      div.className = "input-group";
       div.innerHTML = `
-        <label>${index + 1}. ${doc}</label><br>
-        <input type="file" name="documento_${index}" id="doc_${index}" accept=".pdf,.jpg,.jpeg,.png"><br><br>
+        <label for="arquivo${i}">${i + 1}. ${doc}</label>
+        <input type="file" id="arquivo${i}" name="arquivos" accept=".pdf,.jpg,.jpeg,.png">
       `;
-      container.appendChild(div);
+      inputsContainer.appendChild(div);
     });
 
-    // Checkbox para Reservista
-    const checkbox = document.getElementById("nao_possui_reservista");
-    checkbox.addEventListener("change", () => {
-      const inputReservista = document.getElementById("doc_16");
-      inputReservista.disabled = checkbox.checked;
+    const reservistaCheckbox = document.getElementById("naoPossuiReservista");
+    reservistaCheckbox.addEventListener("change", () => {
+      document.getElementById("arquivo16").disabled = reservistaCheckbox.checked;
     });
 
-    document.getElementById("formulario").addEventListener("submit", async (e) => {
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const formData = new FormData();
+      const inputs = document.querySelectorAll('input[type="file"]');
 
-      const formData = new FormData(e.target);
-      formData.append("nao_possui_reservista", checkbox.checked);
+      inputs.forEach((input, index) => {
+        if (index === 16 && reservistaCheckbox.checked) return;
+        if (input.files[0]) {
+          formData.append("arquivos", input.files[0], `${index}_${documentos[index]}`);
+        }
+      });
 
-      try {
-        const response = await fetch("/gerar_pdf", {
-          method: "POST",
-          body: formData,
-        });
+      formData.append("nao_possui_reservista", reservistaCheckbox.checked);
 
-        if (!response.ok) throw new Error();
+      const status = document.getElementById("status");
+      status.textContent = "Gerando PDF...";
 
-        const blob = await response.blob();
+      const res = await fetch("/gerar_pdf", {
+        method: "POST",
+        body: formData
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = "Inscricao_OAB_ES.pdf";
         a.click();
         URL.revokeObjectURL(url);
-
-        document.getElementById("mensagem").innerText = "PDF gerado com sucesso!";
-      } catch {
-        document.getElementById("mensagem").innerText = "Erro ao gerar o PDF.";
+        status.textContent = "PDF gerado com sucesso!";
+      } else {
+        status.textContent = "Erro ao gerar o PDF.";
       }
     });
   </script>
