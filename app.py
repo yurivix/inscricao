@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template_string, request, send_file
+import os
+import io
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfMerger
 from fpdf import FPDF
-import os
-import io
 
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
@@ -30,71 +33,92 @@ DOCUMENTOS = [
 
 @app.route('/')
 def index():
-    return render_template('index.html', documentos=list(enumerate(DOCUMENTOS)))
+    return render_template_string(open('templates/index.html').read(), documentos=DOCUMENTOS)
 
 @app.route('/gerar_pdf', methods=['POST'])
 def gerar_pdf():
-    nome_completo = request.form.get('nome_completo', '').strip()
-    nao_possui_reservista = 'nao_possui_reservista' in request.form
+    nome = request.form.get("nome")
+    reservista_nao_possui = request.form.get("nao_possui_reservista") == "on"
 
-    arquivos = []
-    for i, doc in enumerate(DOCUMENTOS):
-        file = request.files.get(f'arquivo_{i}')
-        if doc == "Certificado de Reservista (para homens)":
-            if file and file.filename:
-                arquivos.append((doc, file))
-            elif nao_possui_reservista:
-                arquivos.append((doc, None))
-            else:
-                return f'O documento "{doc}" é obrigatório, ou marque "Não possuo".'
-        else:
-            arquivos.append((doc, file if file and file.filename else None))
+    documentos = {}
+    for doc in DOCUMENTOS:
+        documentos[doc] = {
+            "file": request.files.get(doc),
+            "nao_possui": doc == "Certificado de Reservista (para homens)" and reservista_nao_possui
+        }
 
     merger = PdfMerger()
 
-    # Capa
-    capa_pdf = FPDF()
-    capa_pdf.add_page()
-    capa_pdf.set_font("Arial", size=24)
-    capa_pdf.cell(0, 20, "Inscrição na OAB/ES", ln=True, align="C")
-    capa_pdf.set_font("Arial", size=16)
-    capa_pdf.cell(0, 10, f"Candidato: {nome_completo}", ln=True, align="C")
+    # Capa com nome
+    capa = FPDF()
+    capa.add_page()
+    capa.set_font("Arial", "B", 24)
+    capa.cell(0, 10, f"Documentação de {nome}", ln=True, align="C")
     capa_stream = io.BytesIO()
-    capa_pdf.output(capa_stream)
+    capa.output(capa_stream)
     capa_stream.seek(0)
     merger.append(capa_stream)
 
-    # Inserir documentos
-    for doc_nome, file in arquivos:
-        # Página de título
-        titulo_pdf = FPDF()
-        titulo_pdf.add_page()
-        titulo_pdf.set_font("Arial", "B", 18)
-        titulo_pdf.cell(0, 100, doc_nome, ln=True, align="C")
-        titulo_stream = io.BytesIO()
-        titulo_pdf.output(titulo_stream)
-        titulo_stream.seek(0)
-        merger.append(titulo_stream)
+    for doc_nome, info in documentos.items():
+        if doc_nome == "Certificado de Reservista (para homens)" and info["nao_possui"]:
+            pdf_info = FPDF()
+            pdf_info.add_page()
+            pdf_info.set_font("Arial", "", 14)
+            pdf_info.multi_cell(0, 10, f"{doc_nome}:
 
-        if file:
-            file.stream.seek(0)
-            merger.append(file.stream)
-        elif doc_nome == "Certificado de Reservista (para homens)" and nao_possui_reservista:
+O candidato declarou que não possui este documento.")
+            info_stream = io.BytesIO()
+            pdf_info.output(info_stream)
+            info_stream.seek(0)
+            merger.append(info_stream)
+            continue
+
+        file = info["file"]
+        if file and file.filename.lower().endswith(".pdf") and file.mimetype == "application/pdf":
+            try:
+                file.stream.seek(0)
+
+                # Página com o nome do documento
+                nome_pdf = FPDF()
+                nome_pdf.add_page()
+                nome_pdf.set_font("Arial", "B", 16)
+                nome_pdf.multi_cell(0, 10, doc_nome)
+                nome_stream = io.BytesIO()
+                nome_pdf.output(nome_stream)
+                nome_stream.seek(0)
+                merger.append(nome_stream)
+
+                # Documento em si
+                merger.append(file.stream)
+            except Exception:
+                erro_pdf = FPDF()
+                erro_pdf.add_page()
+                erro_pdf.set_font("Arial", "", 14)
+                erro_pdf.multi_cell(0, 10, f"{doc_nome}:
+
+Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF válido.")
+                erro_stream = io.BytesIO()
+                erro_pdf.output(erro_stream)
+                erro_stream.seek(0)
+                merger.append(erro_stream)
+        else:
             aviso_pdf = FPDF()
             aviso_pdf.add_page()
             aviso_pdf.set_font("Arial", "", 14)
-            aviso_pdf.multi_cell(0, 10, "Declaro que não possuo Certificado de Reservista.")
+            aviso_pdf.multi_cell(0, 10, f"{doc_nome}:
+
+Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos.")
             aviso_stream = io.BytesIO()
             aviso_pdf.output(aviso_stream)
             aviso_stream.seek(0)
             merger.append(aviso_stream)
 
-    resultado_pdf = io.BytesIO()
-    merger.write(resultado_pdf)
+    output = io.BytesIO()
+    merger.write(output)
     merger.close()
-    resultado_pdf.seek(0)
+    output.seek(0)
 
-    return send_file(resultado_pdf, download_name='inscricao_oab_es.pdf', as_attachment=True)
+    return send_file(output, as_attachment=True, download_name=f"documentos_{nome}.pdf")
 
 if __name__ == '__main__':
     app.run(debug=True)
