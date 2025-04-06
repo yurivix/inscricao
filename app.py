@@ -64,9 +64,9 @@ def gerar_pdf():
             pdf_info = FPDF()
             pdf_info.add_page()
             pdf_info.set_font("Arial", "", 14)
-            pdf_info.multi_cell(0, 10, f"{doc_nome}:
+            pdf_info.multi_cell(0, 10, f"""{doc_nome}:
 
-O candidato declarou que não possui este documento.")
+O candidato declarou que não possui este documento.""")
             info_stream = io.BytesIO()
             pdf_info.output(info_stream)
             info_stream.seek(0)
@@ -94,9 +94,9 @@ O candidato declarou que não possui este documento.")
                 erro_pdf = FPDF()
                 erro_pdf.add_page()
                 erro_pdf.set_font("Arial", "", 14)
-                erro_pdf.multi_cell(0, 10, f"{doc_nome}:
+                erro_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
-Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF válido.")
+Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF válido.""")
                 erro_stream = io.BytesIO()
                 erro_pdf.output(erro_stream)
                 erro_stream.seek(0)
@@ -105,9 +105,9 @@ Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF vál
             aviso_pdf = FPDF()
             aviso_pdf.add_page()
             aviso_pdf.set_font("Arial", "", 14)
-            aviso_pdf.multi_cell(0, 10, f"{doc_nome}:
+            aviso_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
-Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos.")
+Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos.""")
             aviso_stream = io.BytesIO()
             aviso_pdf.output(aviso_stream)
             aviso_stream.seek(0)
