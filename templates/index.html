@@ -2,50 +2,53 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Inscrição OAB-ES</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição OAB-ES</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f2f4f8;
             margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #002855;
+            color: #fff;
             padding: 20px;
-        }
-        h1 {
-            color: #002855;
             text-align: center;
-            margin-bottom: 10px;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
+
+        main {
+            max-width: 700px;
+            margin: 30px auto;
+            background-color: #fff;
             padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+
         label {
             font-weight: bold;
-            display: block;
             margin-top: 15px;
-            color: #002855;
+            display: block;
         }
+
         input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 6px;
+            padding: 8px;
+            margin-top: 4px;
+            margin-bottom: 10px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 5px;
         }
+
         input[type="checkbox"] {
-            margin-top: 10px;
-            margin-right: 8px;
+            margin-right: 5px;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .submit-btn {
-            background-color: #c8102e;
+
+        button {
+            background-color: #d6001c;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -53,45 +56,39 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 20px;
-            width: 100%;
         }
-        .submit-btn:hover {
-            background-color: #a00e26;
+
+        button:hover {
+            background-color: #b50018;
         }
+
         @media (max-width: 600px) {
-            .container {
-                padding: 15px;
+            main {
+                margin: 15px;
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Inscrição OAB/ES</h1>
-        <form action="/gerar_pdf" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="nome_completo">Nome completo do candidato:</label>
-                <input type="text" id="nome_completo" name="nome_completo" required>
-            </div>
+    <header>
+        <h1>Inscrição OAB-ES</h1>
+    </header>
+    <main>
+        <form action="/gerar_pdf" method="post" enctype="multipart/form-data">
+            <label for="nome_completo">Nome completo:</label>
+            <input type="text" name="nome_completo" id="nome_completo" required>
 
             {% for i, doc in documentos %}
-            <div class="form-group">
-                <label for="arquivo_{{ i }}">{{ doc }}</label>
-
+                <label for="arquivo_{{ i }}">{{ doc }}:</label>
+                <input type="file" name="arquivo_{{ i }}" id="arquivo_{{ i }}">
                 {% if doc == "Certificado de Reservista (para homens)" %}
-                    <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}">
-                    <label>
-                        <input type="checkbox" name="nao_possui_reservista" value="1">
-                        Não possuo Certificado de Reservista
-                    </label>
-                {% else %}
-                    <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}" required>
+                    <label><input type="checkbox" name="nao_possui_reservista"> Não possuo Certificado de Reservista</label>
                 {% endif %}
-            </div>
             {% endfor %}
 
-            <button type="submit" class="submit-btn">Gerar PDF Final</button>
+            <button type="submit">Gerar PDF Final</button>
         </form>
-    </div>
+    </main>
 </body>
 </html>
