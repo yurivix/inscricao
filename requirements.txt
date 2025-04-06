@@ -2,3 +2,6 @@ Flask
 Werkzeug
 fpdf
 gunicorn
+Flask 
+PyPDF2 
+Pillow
