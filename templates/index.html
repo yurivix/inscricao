@@ -2,161 +2,92 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <title>Inscrição OAB-ES</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscrição OAB/ES</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-            color: #222;
-            line-height: 1.6;
+            font-family: Arial, sans-serif;
+            background-color: #f2f4f8;
+            margin: 0;
+            padding: 20px;
         }
-
+        h1 {
+            color: #002855;
+            text-align: center;
+            margin-bottom: 10px;
+        }
         .container {
             max-width: 800px;
-            margin: 40px auto;
-            padding: 30px;
-            background-color: #ffffff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-size: 2em;
-            color: #002c5f;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #c1272d;
-            display: inline-block;
-            padding-bottom: 5px;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .documentos {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .documento {
-            display: flex;
-            flex-direction: column;
-        }
-
         label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #002c5f;
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            color: #002855;
         }
-
-        input[type="file"],
-        input[type="text"] {
+        input[type="text"], input[type="file"] {
+            width: 100%;
             padding: 10px;
-            font-size: 1em;
+            margin-top: 6px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            background-color: #fafafa;
-            transition: border-color 0.3s ease;
         }
-
-        input[type="file"]:hover,
-        input[type="text"]:hover,
-        input[type="file"]:focus,
-        input[type="text"]:focus {
-            border-color: #002c5f;
-            outline: none;
-        }
-
         input[type="checkbox"] {
-            transform: scale(1.2);
             margin-right: 8px;
-            accent-color: #002c5f;
         }
-
-        button {
-            align-self: flex-start;
-            padding: 12px 24px;
-            font-size: 1.1em;
-            background-color: #002c5f;
-            color: #fff;
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .submit-btn {
+            background-color: #c8102e;
+            color: white;
             border: none;
+            padding: 12px 20px;
             border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
         }
-
-        button:hover {
-            background-color: #c1272d;
+        .submit-btn:hover {
+            background-color: #a00e26;
         }
-
         @media (max-width: 600px) {
             .container {
-                margin: 20px;
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 1.5em;
-            }
-
-            button {
-                width: 100%;
-                text-align: center;
-            }
-
-            input[type="file"],
-            input[type="text"] {
-                font-size: 1em;
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Inscrição OAB/ES</h1>
-        </header>
+        <h1>Inscrição OAB/ES</h1>
         <form action="/gerar_pdf" method="POST" enctype="multipart/form-data">
-            <div class="documentos">
-                {% for i, doc in documentos %}
-                <div class="documento">
-                    <label for="arquivo_{{ i }}">{{ doc }}</label>
-                    <input type="file" name="arquivo_{{ i }}" id="arquivo_{{ i }}" required>
-                </div>
-                {% endfor %}
+            <div class="form-group">
+                <label for="nome_completo">Nome completo do candidato:</label>
+                <input type="text" id="nome_completo" name="nome_completo" required>
             </div>
 
-            <div class="documento">
-                <label for="nao_possui_reservista">
-                    <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
-                    Não possuo Certificado de Reservista (para homens)
+            {% for i, doc in documentos %}
+            <div class="form-group">
+                <label for="arquivo_{{ i }}">{{ doc }}</label>
+                <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}"
+                       {% if doc not in documentos_opcionais %} required {% endif %}>
+                {% if doc == "Certificado de Reservista (para homens)" %}
+                <label>
+                    <input type="checkbox" name="nao_possui_reservista" value="1">
+                    Não possuo Certificado de Reservista
                 </label>
+                {% endif %}
             </div>
+            {% endfor %}
 
-            <div class="documento">
-                <label for="nome_completo">Nome Completo</label>
-                <input type="text" name="nome_completo" id="nome_completo" required>
-            </div>
-
-            <div class="documento">
-                <button type="submit">Gerar PDF</button>
-            </div>
+            <button type="submit" class="submit-btn">Gerar PDF Final</button>
         </form>
     </div>
 </body>
