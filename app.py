@@ -11,7 +11,6 @@ DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
     "Requerimento de inscrição no Conselho Federal da OAB",
     "Histórico Escolar com diploma ou colação de grau (autenticado)",
-    "Certidão Negativa Cartório Distribuidor Justiça Federal",
     "Certificado de Aprovação em Exame de Ordem",
     "Certidão Negativa - Cartório Distribuidor do Crime",
     "Certidão Negativa - Cartório Distribuidor do Cível",
@@ -45,17 +44,15 @@ def gerar_pdf():
             if file and file.filename:
                 arquivos.append((doc, file))
             elif nao_possui_reservista:
-                arquivos.append((doc, None))  # Marcar que o candidato não possui
+                arquivos.append((doc, None))
             else:
                 return f'O documento "{doc}" é obrigatório, ou marque "Não possuo".'
         else:
-            if not file or file.filename == '':
-                return f'O documento "{doc}" é obrigatório.'
-            arquivos.append((doc, file))
+            arquivos.append((doc, file if file and file.filename else None))
 
     merger = PdfMerger()
 
-    # Página de capa
+    # Capa
     capa_pdf = FPDF()
     capa_pdf.add_page()
     capa_pdf.set_font("Arial", size=24)
@@ -67,8 +64,9 @@ def gerar_pdf():
     capa_stream.seek(0)
     merger.append(capa_stream)
 
+    # Inserir documentos
     for doc_nome, file in arquivos:
-        # Página com o título do documento
+        # Página de título
         titulo_pdf = FPDF()
         titulo_pdf.add_page()
         titulo_pdf.set_font("Arial", "B", 18)
