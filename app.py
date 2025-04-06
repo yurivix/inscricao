@@ -2,12 +2,11 @@ from flask import Flask, request, send_file, render_template
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import os
-import tempfile
+import io
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
 
-documentos = [
+DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
     "Requerimento de inscrição no Conselho Federal da OAB",
     "Histórico Escolar com diploma ou colação de grau (autenticado)",
@@ -29,46 +28,60 @@ documentos = [
     "Declaração de responsabilidade das informações"
 ]
 
-@app.route('/')
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.route("/")
 def index():
-    return render_template('index.html')  # se quiser usar template HTML
+    return render_template("index.html")
 
-@app.route('/gerar_pdf', methods=['POST'])
+@app.route("/gerar_pdf", methods=["POST"])
 def gerar_pdf():
-    arquivos = request.files.getlist('arquivos')
-    nao_possui_reservista = request.form.get('nao_possui_reservista') == 'true'
+    arquivos = request.files.getlist("arquivos")
+    nao_possui_reservista = request.form.get("nao_possui_reservista") == "true"
 
-    arquivos_ordenados = sorted(
-        arquivos, key=lambda f: int(f.filename.split('_')[0])
-    )
+    uploads_dict = {int(f.filename.split("_")[0]): f for f in arquivos}
+
+    # Valida todos os documentos, exceto o de reservista se a caixa estiver marcada
+    for i in range(len(DOCUMENTOS)):
+        if i == 16 and nao_possui_reservista:
+            continue
+        if i not in uploads_dict:
+            return f"Documento obrigatório não enviado: {DOCUMENTOS[i]}", 400
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    for arquivo in arquivos_ordenados:
-        indice = int(arquivo.filename.split('_')[0])
-        if indice == 16 and nao_possui_reservista:
+    # Gera o PDF com os títulos dos documentos
+    for i in range(len(DOCUMENTOS)):
+        if i == 16 and nao_possui_reservista:
             continue
 
-        filename = secure_filename(arquivo.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        arquivo.save(filepath)
+        file = uploads_dict[i]
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        file.save(file_path)
 
-        # Inserir nome do documento como título
         pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.multi_cell(0, 10, f"{indice + 1}. {documentos[indice]}")
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, f"{i+1}. {DOCUMENTOS[i]}", ln=True)
+        pdf.set_font("Arial", "", 10)
+        pdf.cell(0, 10, f"Arquivo enviado: {filename}", ln=True)
 
-        # Adiciona o arquivo como imagem se for imagem
-        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-            pdf.image(filepath, x=10, y=30, w=180)
-        else:
-            pdf.multi_cell(0, 10, f"Arquivo anexado: {filename} (PDF não embutido neste modelo)")
+    # Adiciona declaração se não tiver certificado de reservista
+    if nao_possui_reservista:
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Declaração", ln=True)
+        pdf.set_font("Arial", "", 12)
+        pdf.multi_cell(0, 10, "O candidato declarou, sob responsabilidade, que não possui Certificado de Reservista.")
 
-    output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'Inscricao_OAB_ES.pdf')
-    pdf.output(output_path)
+    # Retorna o PDF como download
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
 
-    return send_file(output_path, as_attachment=True)
+    return send_file(pdf_output, as_attachment=True, download_name="Inscricao_OAB_ES.pdf")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
