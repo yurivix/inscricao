@@ -68,12 +68,12 @@ def gerar_pdf():
     capa.add_page()
     capa.set_font("Arial", "B", 18)
     capa.set_text_color(0, 40, 104)
-    capa.cell(0, 10, "Ordem dos Advogados do Brasil - Seccional Espírito Santo", ln=True, align="C")
+    capa.cell(0, 10, "Ordem dos Advogados do Brasil", ln=True, align="C")
+    capa.cell(0, 10, "Seccional do Espírito Santo", ln=True, align="C")
     capa.ln(10)
     capa.set_font("Arial", "B", 16)
-    capa.set_text_color(200, 0, 0)
-    capa.cell(0, 10, "Inscrição na OAB/ES", ln=True, align="C")
     capa.set_text_color(0, 0, 0)
+    capa.cell(0, 10, "Inscrição na OAB/ES", ln=True, align="C")
     capa.ln(20)
     capa.set_font("Arial", size=14)
     capa.cell(0, 10, f"Nome completo: {nome_completo}", ln=True, align="C")
@@ -84,6 +84,7 @@ def gerar_pdf():
     if nao_possui_reservista:
         capa.ln(10)
         capa.set_text_color(200, 0, 0)
+        capa.set_font("Arial", "B", 12)
         capa.multi_cell(0, 10, "Declaração: O candidato declarou que NÃO possui o Certificado de Reservista.", align="C")
         capa.set_text_color(0, 0, 0)
 
