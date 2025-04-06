@@ -1,101 +1,97 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Inscrição OAB-ES</title>
-  <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <title>Inscrição OAB-ES</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f9f9f9;
+            padding: 2rem;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #003366;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin: 1rem 0 0.3rem;
+            font-weight: bold;
+        }
+
+        input[type="file"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .doc-block {
+            margin-bottom: 1.2rem;
+        }
+
+        button {
+            background-color: #003366;
+            color: #fff;
+            padding: 0.8rem 1.2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #005599;
+        }
+
+        .info {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
     <h1>Inscrição OAB-ES</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-      <div id="inputsContainer"></div>
+    <form method="post" action="/gerar_pdf" enctype="multipart/form-data">
+        <label for="nome_completo">Nome completo:</label>
+        <input type="text" name="nome_completo" id="nome_completo" required>
 
-      <div class="checkbox-container">
-        <input type="checkbox" id="naoPossuiReservista" name="naoPossuiReservista">
-        <label for="naoPossuiReservista">Não possuo Certificado de Reservista</label>
-      </div>
+        <div class="doc-block">
+            <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
+            <label for="nao_possui_reservista" style="display: inline;">Não possuo Certificado de Reservista</label>
+        </div>
 
-      <button type="submit">Gerar PDF Final</button>
-      <p id="status"></p>
+        {% for i, doc in documentos %}
+        <div class="doc-block">
+            <label for="doc_{{ i }}">{{ doc }}</label>
+            <input type="file" name="arquivos" id="doc_{{ i }}" required>
+        </div>
+        {% endfor %}
+
+        <button type="submit">Gerar PDF</button>
+
+        <div class="info">
+            Todos os documentos são obrigatórios, exceto o Certificado de Reservista, caso você marque a opção "Não possuo".
+        </div>
     </form>
-  </div>
-
-  <script>
-    const documentos = [
-      "Requerimento de inscrição da OAB-ES",
-      "Requerimento de inscrição no Conselho Federal da OAB",
-      "Histórico Escolar com diploma ou colação de grau (autenticado)",
-      "Certidão Negativa Cartório Distribuidor Justiça Federal",
-      "Certificado de Aprovação em Exame de Ordem",
-      "Certidão Negativa - Cartório Distribuidor do Crime",
-      "Certidão Negativa - Cartório Distribuidor do Cível",
-      "Certidão Negativa - Cartório Distribuidor da Família",
-      "Certidão Negativa - Cartório Distribuidor do Crime Federal 2ª Região",
-      "Certidão Negativa - Cartório Distribuidor Cível Federal 2ª Região",
-      "Declaração de atividade, função ou cargo (com ou sem atividade)",
-      "Declaração de atividade da pessoa jurídica vinculada",
-      "Certidão de quitação eleitoral",
-      "RG",
-      "CPF",
-      "Título de Eleitor (frente/verso)",
-      "Certificado de Reservista (para homens)",
-      "Comprovante de residência atualizado",
-      "Declaração de responsabilidade das informações"
-    ];
-
-    const inputsContainer = document.getElementById("inputsContainer");
-
-    documentos.forEach((doc, i) => {
-      const div = document.createElement("div");
-      div.className = "input-group";
-      div.innerHTML = `
-        <label for="arquivo${i}">${i + 1}. ${doc}</label>
-        <input type="file" id="arquivo${i}" name="arquivos" accept=".pdf,.jpg,.jpeg,.png">
-      `;
-      inputsContainer.appendChild(div);
-    });
-
-    const reservistaCheckbox = document.getElementById("naoPossuiReservista");
-    reservistaCheckbox.addEventListener("change", () => {
-      document.getElementById("arquivo16").disabled = reservistaCheckbox.checked;
-    });
-
-    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData();
-      const inputs = document.querySelectorAll('input[type="file"]');
-
-      inputs.forEach((input, index) => {
-        if (index === 16 && reservistaCheckbox.checked) return;
-        if (input.files[0]) {
-          formData.append("arquivos", input.files[0], `${index}_${documentos[index]}`);
-        }
-      });
-
-      formData.append("nao_possui_reservista", reservistaCheckbox.checked);
-
-      const status = document.getElementById("status");
-      status.textContent = "Gerando PDF...";
-
-      const res = await fetch("/gerar_pdf", {
-        method: "POST",
-        body: formData
-      });
-
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "Inscricao_OAB_ES.pdf";
-        a.click();
-        URL.revokeObjectURL(url);
-        status.textContent = "PDF gerado com sucesso!";
-      } else {
-        status.textContent = "Erro ao gerar o PDF.";
-      }
-    });
-  </script>
 </body>
 </html>
