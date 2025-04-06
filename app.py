@@ -54,9 +54,8 @@ def gerar_pdf():
     capa.add_page()
     capa.set_font("Arial", "B", 24)
     capa.cell(0, 10, f"Documentação de {nome}", ln=True, align="C")
-    capa_stream = io.BytesIO()
-    capa.output(capa_stream)
-    capa_stream.seek(0)
+    capa_output = capa.output(dest='S').encode('latin1')
+    capa_stream = io.BytesIO(capa_output)
     merger.append(capa_stream)
 
     for doc_nome, info in documentos.items():
@@ -67,9 +66,8 @@ def gerar_pdf():
             pdf_info.multi_cell(0, 10, f"""{doc_nome}:
 
 O candidato declarou que não possui este documento.""")
-            info_stream = io.BytesIO()
-            pdf_info.output(info_stream)
-            info_stream.seek(0)
+            info_output = pdf_info.output(dest='S').encode('latin1')
+            info_stream = io.BytesIO(info_output)
             merger.append(info_stream)
             continue
 
@@ -83,9 +81,8 @@ O candidato declarou que não possui este documento.""")
                 nome_pdf.add_page()
                 nome_pdf.set_font("Arial", "B", 16)
                 nome_pdf.multi_cell(0, 10, doc_nome)
-                nome_stream = io.BytesIO()
-                nome_pdf.output(nome_stream)
-                nome_stream.seek(0)
+                nome_output = nome_pdf.output(dest='S').encode('latin1')
+                nome_stream = io.BytesIO(nome_output)
                 merger.append(nome_stream)
 
                 # Documento em si
@@ -97,9 +94,8 @@ O candidato declarou que não possui este documento.""")
                 erro_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
 Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF válido.""")
-                erro_stream = io.BytesIO()
-                erro_pdf.output(erro_stream)
-                erro_stream.seek(0)
+                erro_output = erro_pdf.output(dest='S').encode('latin1')
+                erro_stream = io.BytesIO(erro_output)
                 merger.append(erro_stream)
         elif doc_nome != "Certificado de Reservista (para homens)":
             aviso_pdf = FPDF()
@@ -108,9 +104,8 @@ Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF vál
             aviso_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
 Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos.""")
-            aviso_stream = io.BytesIO()
-            aviso_pdf.output(aviso_stream)
-            aviso_stream.seek(0)
+            aviso_output = aviso_pdf.output(dest='S').encode('latin1')
+            aviso_stream = io.BytesIO(aviso_output)
             merger.append(aviso_stream)
 
     output = io.BytesIO()
@@ -118,7 +113,7 @@ Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos."""
     merger.close()
     output.seek(0)
 
-    return send_file(output, as_attachment=True, download_name=f"documentos_{nome}.pdf")
+    return send_file(output, as_attachment=True, download_name=f"documentos_{nome}.pdf", mimetype='application/pdf')
 
 if __name__ == '__main__':
     app.run(debug=True)
