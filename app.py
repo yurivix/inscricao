@@ -1,18 +1,20 @@
 from flask import Flask, render_template, request, send_file
-from werkzeug.utils import secure_filename
-from fpdf import FPDF
 import os
-from datetime import datetime
+from werkzeug.utils import secure_filename
 from PyPDF2 import PdfMerger
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-DOCUMENTOS = [
+# Lista atualizada dos documentos exigidos pela OAB-ES
+documentos = [
     "Requerimento de inscrição da OAB-ES",
     "Requerimento de inscrição no Conselho Federal da OAB",
     "Histórico Escolar com diploma ou colação de grau (autenticado)",
+    "Certidão Negativa Cartório Distribuidor Justiça Federal",
     "Certificado de Aprovação em Exame de Ordem",
     "Certidão Negativa - Cartório Distribuidor do Crime",
     "Certidão Negativa - Cartório Distribuidor do Cível",
@@ -30,87 +32,96 @@ DOCUMENTOS = [
     "Declaração de responsabilidade das informações"
 ]
 
-@app.route("/", methods=["GET"])
+# Apenas este documento é opcional
+documentos_opcionais = ["Certificado de Reservista (para homens)"]
+
+@app.route("/")
 def index():
-    documentos_com_indices = [(i, doc) for i, doc in enumerate(DOCUMENTOS)]
-    return render_template("index.html", documentos=documentos_com_indices)
+    return render_template("index.html",
+                           documentos=enumerate(documentos),
+                           documentos_opcionais=documentos_opcionais)
 
 @app.route("/gerar_pdf", methods=["POST"])
 def gerar_pdf():
-    nome_completo = request.form.get("nome_completo", "Nome não informado")
-    nao_possui_reservista = request.form.get("nao_possui_reservista") == "true"
+    nome_completo = request.form.get("nome_completo", "Candidato")
+    nao_possui_reservista = request.form.get("nao_possui_reservista")
 
-    arquivos = request.files.getlist("arquivos")
-    arquivos_salvos = []
-    indice_docs = []
+    arquivos_final = []
 
-    for i, doc in enumerate(DOCUMENTOS):
-        if i == 16 and nao_possui_reservista:
-            indice_docs.append((i, doc + " (Não possui - declarado)", None))
-            continue
+    # Adiciona capa personalizada
+    capa_path = os.path.join(UPLOAD_FOLDER, "capa.pdf")
+    gerar_capa_pdf(nome_completo, capa_path)
+    arquivos_final.append(capa_path)
 
-        encontrado = False
-        for file in arquivos:
-            if file.filename.startswith(f"{i}_"):
-                filename = secure_filename(file.filename)
-                path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(path)
-                arquivos_salvos.append(path)
-                indice_docs.append((i, doc, path))
-                encontrado = True
-                break
+    for i, nome_doc in enumerate(documentos):
+        file = request.files.get(f"arquivo_{i}")
+        if file and file.filename:
+            filename = secure_filename(f"{i}_{file.filename}")
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)
 
-        if not encontrado:
-            return f"Faltando documento obrigatório: {doc}", 400
+            titulo_pdf_path = os.path.join(UPLOAD_FOLDER, f"titulo_{i}.pdf")
+            gerar_titulo_pdf(nome_doc, titulo_pdf_path)
 
-    # Cria capa
-    capa = FPDF()
-    capa.add_page()
-    capa.set_font("Arial", "B", 18)
-    capa.set_text_color(0, 40, 104)
-    capa.cell(0, 10, "Ordem dos Advogados do Brasil", ln=True, align="C")
-    capa.cell(0, 10, "Seccional do Espírito Santo", ln=True, align="C")
-    capa.ln(10)
-    capa.set_font("Arial", "B", 16)
-    capa.set_text_color(0, 0, 0)
-    capa.cell(0, 10, "Inscrição na OAB/ES", ln=True, align="C")
-    capa.ln(20)
-    capa.set_font("Arial", size=14)
-    capa.cell(0, 10, f"Nome completo: {nome_completo}", ln=True, align="C")
-    capa.ln(10)
-    capa.set_font("Arial", size=12)
-    capa.cell(0, 10, f"Data: {datetime.today().strftime('%d/%m/%Y')}", ln=True, align="C")
+            arquivos_final.append(titulo_pdf_path)
+            arquivos_final.append(filepath)
 
-    if nao_possui_reservista:
-        capa.ln(10)
-        capa.set_text_color(200, 0, 0)
-        capa.set_font("Arial", "B", 12)
-        capa.multi_cell(0, 10, "Declaração: O candidato declarou que NÃO possui o Certificado de Reservista.", align="C")
-        capa.set_text_color(0, 0, 0)
+        elif nome_doc == "Certificado de Reservista (para homens)" and nao_possui_reservista:
+            aviso_path = os.path.join(UPLOAD_FOLDER, f"aviso_reservista.pdf")
+            gerar_aviso_reservista(aviso_path)
 
-    # Cria índice
-    capa.add_page()
-    capa.set_font("Arial", "B", 14)
-    capa.cell(0, 10, "Índice dos Documentos", ln=True, align="C")
-    capa.ln(5)
-    capa.set_font("Arial", size=12)
-    for i, doc, path in indice_docs:
-        capa.cell(0, 10, f"{i+1}. {doc}", ln=True)
+            titulo_pdf_path = os.path.join(UPLOAD_FOLDER, f"titulo_{i}.pdf")
+            gerar_titulo_pdf(nome_doc, titulo_pdf_path)
 
-    capa_path = os.path.join(app.config['UPLOAD_FOLDER'], "00_capa.pdf")
-    capa.output(capa_path)
+            arquivos_final.append(titulo_pdf_path)
+            arquivos_final.append(aviso_path)
 
-    arquivos_salvos.insert(0, capa_path)
+        elif nome_doc not in documentos_opcionais:
+            return f"Documento obrigatório faltando: {nome_doc}", 400
 
+    # Junta os PDFs
+    pdf_saida = os.path.join(UPLOAD_FOLDER, f"{nome_completo}_inscricao.pdf")
+    unir_pdfs(arquivos_final, pdf_saida)
+
+    return send_file(pdf_saida, as_attachment=True)
+
+# Funções auxiliares
+
+def gerar_titulo_pdf(texto, path):
+    c = canvas.Canvas(path, pagesize=A4)
+    width, height = A4
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2, height - 100, texto)
+    c.showPage()
+    c.save()
+
+def gerar_aviso_reservista(path):
+    c = canvas.Canvas(path, pagesize=A4)
+    width, height = A4
+    c.setFont("Helvetica", 14)
+    aviso = "O candidato declarou que não possui Certificado de Reservista."
+    c.drawCentredString(width / 2, height - 100, aviso)
+    c.showPage()
+    c.save()
+
+def gerar_capa_pdf(nome_candidato, path):
+    c = canvas.Canvas(path, pagesize=A4)
+    width, height = A4
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(width / 2, height - 150, "Inscrição - OAB/ES")
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(width / 2, height - 200, f"Nome do Candidato: {nome_candidato}")
+    c.setFont("Helvetica-Oblique", 12)
+    c.drawCentredString(width / 2, height - 240, "Documentação anexa conforme exigido no edital.")
+    c.showPage()
+    c.save()
+
+def unir_pdfs(lista_paths, output_path):
     merger = PdfMerger()
-    for file_path in arquivos_salvos:
-        merger.append(file_path)
-
-    final_path = os.path.join(app.config['UPLOAD_FOLDER'], "final.pdf")
-    merger.write(final_path)
+    for path in lista_paths:
+        merger.append(path)
+    merger.write(output_path)
     merger.close()
-
-    return send_file(final_path, as_attachment=True, download_name="Inscricao_OAB_ES.pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)
