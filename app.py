@@ -1,10 +1,13 @@
-from flask import Flask, request, send_file, render_template
+from flask import Flask, render_template, request, send_file, make_response
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import os
-import io
+from datetime import datetime
+from PyPDF2 import PdfMerger
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
@@ -28,60 +31,67 @@ DOCUMENTOS = [
     "Declaração de responsabilidade das informações"
 ]
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html")
+    return render_template("index.html", documentos=enumerate(DOCUMENTOS))
 
 @app.route("/gerar_pdf", methods=["POST"])
 def gerar_pdf():
-    arquivos = request.files.getlist("arquivos")
+    nome_completo = request.form.get("nome_completo", "Nome não informado")
     nao_possui_reservista = request.form.get("nao_possui_reservista") == "true"
 
-    uploads_dict = {int(f.filename.split("_")[0]): f for f in arquivos}
+    arquivos = request.files.getlist("arquivos")
+    arquivos_salvos = []
 
-    # Valida todos os documentos, exceto o de reservista se a caixa estiver marcada
-    for i in range(len(DOCUMENTOS)):
-        if i == 16 and nao_possui_reservista:
-            continue
-        if i not in uploads_dict:
-            return f"Documento obrigatório não enviado: {DOCUMENTOS[i]}", 400
-
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-
-    # Gera o PDF com os títulos dos documentos
-    for i in range(len(DOCUMENTOS)):
+    for i, doc in enumerate(DOCUMENTOS):
         if i == 16 and nao_possui_reservista:
             continue
 
-        file = uploads_dict[i]
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_DIR, filename)
-        file.save(file_path)
+        encontrado = False
+        for file in arquivos:
+            if file.filename.startswith(f"{i}_"):
+                filename = secure_filename(file.filename)
+                path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(path)
+                arquivos_salvos.append(path)
+                encontrado = True
+                break
 
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, f"{i+1}. {DOCUMENTOS[i]}", ln=True)
-        pdf.set_font("Arial", "", 10)
-        pdf.cell(0, 10, f"Arquivo enviado: {filename}", ln=True)
+        if not encontrado:
+            return "Faltando documento obrigatório: " + doc, 400
 
-    # Adiciona declaração se não tiver certificado de reservista
+    # Cria capa
+    capa = FPDF()
+    capa.add_page()
+    capa.set_font("Arial", "B", 16)
+    capa.cell(0, 10, "Inscrição OAB-ES", ln=True, align="C")
+    capa.ln(10)
+    capa.set_font("Arial", size=14)
+    capa.cell(0, 10, f"Nome completo: {nome_completo}", ln=True, align="C")
+    capa.ln(10)
+    capa.set_font("Arial", size=12)
+    capa.cell(0, 10, f"Data: {datetime.today().strftime('%d/%m/%Y')}", ln=True, align="C")
+
+    # Caso não possua reservista
     if nao_possui_reservista:
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Declaração", ln=True)
-        pdf.set_font("Arial", "", 12)
-        pdf.multi_cell(0, 10, "O candidato declarou, sob responsabilidade, que não possui Certificado de Reservista.")
+        capa.ln(10)
+        capa.set_text_color(200, 0, 0)
+        capa.multi_cell(0, 10, "Declaração: O candidato declarou que NÃO possui o Certificado de Reservista.")
 
-    # Retorna o PDF como download
-    pdf_output = io.BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
+    capa_path = os.path.join(app.config['UPLOAD_FOLDER'], "00_capa.pdf")
+    capa.output(capa_path)
 
-    return send_file(pdf_output, as_attachment=True, download_name="Inscricao_OAB_ES.pdf")
+    arquivos_salvos.insert(0, capa_path)
+
+    merger = PdfMerger()
+    for file_path in arquivos_salvos:
+        merger.append(file_path)
+
+    final_path = os.path.join(app.config['UPLOAD_FOLDER'], "final.pdf")
+    merger.write(final_path)
+    merger.close()
+
+    return send_file(final_path, as_attachment=True, download_name="Inscricao_OAB_ES.pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)
