@@ -1,52 +1,37 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscrição OAB/ES</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="header">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo OAB/ES" class="logo">
-        <h1>Inscrição OAB/ES</h1>
-        <p>Preencha os dados e envie os documentos obrigatórios individualmente.</p>
-    </div>
-
-    <div class="formulario">
-        <form id="uploadForm" action="/gerar_pdf" method="POST" enctype="multipart/form-data">
-            <label for="nome_completo"><strong>Nome completo:</strong></label>
-            <input type="text" name="nome_completo" id="nome_completo" required>
-
-            {% for i, doc in documentos %}
-                <div class="campo-upload">
-                    <label>{{ i + 1 }}. {{ doc }}</label>
-                    {% if 'Reservista' in doc %}
-                        <input type="checkbox" id="nao_possui_reservista" name="nao_possui_reservista" value="true" onchange="toggleReservista(this)">
-                        <label for="nao_possui_reservista">Não possuo</label>
-                        <input type="file" name="arquivos" id="arquivo_{{ i }}" class="arquivo" data-index="{{ i }}" required>
-                    {% else %}
-                        <input type="file" name="arquivos" id="arquivo_{{ i }}" class="arquivo" data-index="{{ i }}" required>
-                    {% endif %}
+    <div class="container">
+        <header>
+            <h1>Inscrição OAB/ES</h1>
+        </header>
+        <form action="/gerar_pdf" method="POST" enctype="multipart/form-data">
+            <div class="documentos">
+                {% for i, doc in enumerate(documentos) %}
+                <div class="documento">
+                    <label for="arquivo_{{ i }}">{{ doc }}</label>
+                    <input type="file" name="arquivo_{{ i }}" id="arquivo_{{ i }}" required>
                 </div>
-            {% endfor %}
-
-            <button type="submit" class="botao-enviar">Gerar PDF Final</button>
+                {% endfor %}
+            </div>
+            <div class="documento">
+                <label for="nao_possui_reservista">Não possuo Certificado de Reservista (para homens)</label>
+                <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
+            </div>
+            <div class="documento">
+                <label for="nome_completo">Nome Completo</label>
+                <input type="text" name="nome_completo" id="nome_completo" required>
+            </div>
+            <div class="documento">
+                <button type="submit">Gerar PDF</button>
+            </div>
         </form>
     </div>
-
-    <script>
-        function toggleReservista(checkbox) {
-            const input = document.querySelector('input[data-index="16"]');
-            if (checkbox.checked) {
-                input.removeAttribute('required');
-                input.disabled = true;
-                input.value = '';
-            } else {
-                input.required = true;
-                input.disabled = false;
-            }
-        }
-    </script>
 </body>
 </html>
