@@ -1,58 +1,73 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 20px;
-}
-
-.container {
-    background: white;
-    border-radius: 10px;
-    padding: 30px;
-    max-width: 800px;
-    margin: auto;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-h2 {
-    text-align: center;
+    padding: 0;
+    background-color: #f4f4f4;
     color: #002d62;
 }
 
-.documento {
-    margin-bottom: 15px;
+.header {
+    background-color: #002d62;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 4px solid #b22222;
+}
+
+.logo {
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.formulario {
+    background-color: white;
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 label {
+    display: block;
+    margin-bottom: 6px;
     font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
 }
 
-input[type="file"],
-input[type="text"] {
+input[type="text"],
+input[type="file"] {
     width: 100%;
-    padding: 8px;
-    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 18px;
     border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-.checkbox {
-    margin-top: 10px;
+.campo-upload {
+    margin-bottom: 20px;
 }
 
-.botao {
-    display: block;
-    margin: 30px auto 0;
-    padding: 10px 20px;
+input[type="checkbox"] {
+    margin-right: 5px;
+    transform: scale(1.2);
+}
+
+.botao-enviar {
     background-color: #002d62;
     color: white;
-    font-size: 16px;
     border: none;
-    border-radius: 8px;
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.botao:hover {
-    background-color: #014aa3;
+.botao-enviar:hover {
+    background-color: #b22222;
 }
