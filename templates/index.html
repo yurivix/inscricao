@@ -3,39 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Inscrição OAB/ES</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
 </head>
 <body>
-<div class="container">
-    <h2>Inscrição OAB/ES</h2>
-    <form action="/gerar_pdf" method="POST" enctype="multipart/form-data">
-        <div class="documento">
-            <label for="nome_completo">Nome completo:</label>
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo OAB/ES" class="logo">
+        <h1>Inscrição OAB/ES</h1>
+        <p>Preencha os dados e envie os documentos obrigatórios individualmente.</p>
+    </div>
+
+    <div class="formulario">
+        <form id="uploadForm" action="/gerar_pdf" method="POST" enctype="multipart/form-data">
+            <label for="nome_completo"><strong>Nome completo:</strong></label>
             <input type="text" name="nome_completo" id="nome_completo" required>
-        </div>
 
-        {% for i, doc in documentos %}
-        <div class="documento" id="doc{{i}}">
-            <label>{{ i + 1 }}. {{ doc }}</label>
-            {% if "Reservista" in doc %}
-                <input type="checkbox" id="nao_possui_reservista" name="nao_possui_reservista" value="true" onchange="toggleReservista({{ i }})">
-                <label for="nao_possui_reservista" style="display:inline; font-weight: normal;">Não possuo certificado de reservista</label>
-            {% endif %}
-            <input type="file" name="arquivos" id="file_{{i}}" {% if "Reservista" not in doc %}required{% endif %}>
-        </div>
-        {% endfor %}
+            {% for i, doc in documentos %}
+                <div class="campo-upload">
+                    <label>{{ i + 1 }}. {{ doc }}</label>
+                    {% if 'Reservista' in doc %}
+                        <input type="checkbox" id="nao_possui_reservista" name="nao_possui_reservista" value="true" onchange="toggleReservista(this)">
+                        <label for="nao_possui_reservista">Não possuo</label>
+                        <input type="file" name="arquivos" id="arquivo_{{ i }}" class="arquivo" data-index="{{ i }}" required>
+                    {% else %}
+                        <input type="file" name="arquivos" id="arquivo_{{ i }}" class="arquivo" data-index="{{ i }}" required>
+                    {% endif %}
+                </div>
+            {% endfor %}
 
-        <button type="submit" class="botao">Gerar PDF</button>
-    </form>
-</div>
+            <button type="submit" class="botao-enviar">Gerar PDF Final</button>
+        </form>
+    </div>
 
-<script>
-    function toggleReservista(index) {
-        const checkbox = document.getElementById("nao_possui_reservista");
-        const fileInput = document.getElementById("file_" + index);
-        fileInput.required = !checkbox.checked;
-        fileInput.disabled = checkbox.checked;
-    }
-</script>
+    <script>
+        function toggleReservista(checkbox) {
+            const input = document.querySelector('input[data-index="16"]');
+            if (checkbox.checked) {
+                input.removeAttribute('required');
+                input.disabled = true;
+                input.value = '';
+            } else {
+                input.required = true;
+                input.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
