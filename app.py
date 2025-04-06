@@ -42,25 +42,25 @@ def gerar_pdf():
 
     arquivos = request.files.getlist("arquivos")
     arquivos_salvos = []
+    indice_docs = []
 
     for i, doc in enumerate(DOCUMENTOS):
         if i == 16 and nao_possui_reservista:
+            indice_docs.append((i, doc + " (Não possui - declarado)", None))
             continue
 
         encontrado = False
         for file in arquivos:
-            print(f"Tentando casar: {file.filename} com índice {i}")
             if file.filename.startswith(f"{i}_"):
                 filename = secure_filename(file.filename)
                 path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(path)
                 arquivos_salvos.append(path)
-                print(f"Salvo: {filename}")
+                indice_docs.append((i, doc, path))
                 encontrado = True
                 break
 
         if not encontrado:
-            print(f"Não encontrado: {doc}")
             return f"Faltando documento obrigatório: {doc}", 400
 
     # Cria capa
@@ -79,6 +79,16 @@ def gerar_pdf():
         capa.ln(10)
         capa.set_text_color(200, 0, 0)
         capa.multi_cell(0, 10, "Declaração: O candidato declarou que NÃO possui o Certificado de Reservista.")
+        capa.set_text_color(0, 0, 0)
+
+    # Cria índice
+    capa.add_page()
+    capa.set_font("Arial", "B", 14)
+    capa.cell(0, 10, "Índice dos Documentos", ln=True, align="C")
+    capa.ln(5)
+    capa.set_font("Arial", size=12)
+    for i, doc, path in indice_docs:
+        capa.cell(0, 10, f"{i+1}. {doc}", ln=True)
 
     capa_path = os.path.join(app.config['UPLOAD_FOLDER'], "00_capa.pdf")
     capa.output(capa_path)
