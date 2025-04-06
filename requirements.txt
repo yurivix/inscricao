@@ -5,3 +5,5 @@ gunicorn
 Flask 
 PyPDF2 
 Pillow
+flask-cors
+
