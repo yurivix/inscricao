@@ -40,27 +40,15 @@ def gerar_pdf():
     nome_completo = request.form.get("nome_completo", "Nome não informado")
     nao_possui_reservista = request.form.get("nao_possui_reservista") == "true"
 
-    arquivos = request.files.getlist("arquivos")
-    arquivos_salvos = []
-    indice_docs = []
-
+    arquivos = []
     for i, doc in enumerate(DOCUMENTOS):
-        if i == 16 and nao_possui_reservista:
-            indice_docs.append((i, doc + " (Não possui - declarado)", None))
-            continue
-
-        encontrado = False
-        for file in arquivos:
-            if file.filename.startswith(f"{i}_"):
-                filename = secure_filename(file.filename)
-                path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(path)
-                arquivos_salvos.append(path)
-                indice_docs.append((i, doc, path))
-                encontrado = True
-                break
-
-        if not encontrado:
+        file = request.files.get(f"arquivo_{i}")
+        if file and file.filename:
+            filename = secure_filename(f"{i}_{file.filename}")
+            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(path)
+            arquivos.append((doc, path))
+        else:
             return f"Faltando documento obrigatório: {doc}", 400
 
     # Cria capa
@@ -94,23 +82,10 @@ def gerar_pdf():
     capa.cell(0, 10, "Índice dos Documentos", ln=True, align="C")
     capa.ln(5)
     capa.set_font("Arial", size=12)
-    for i, doc, path in indice_docs:
+    for i, (doc, path) in enumerate(arquivos):
         capa.cell(0, 10, f"{i+1}. {doc}", ln=True)
 
     capa_path = os.path.join(app.config['UPLOAD_FOLDER'], "00_capa.pdf")
     capa.output(capa_path)
 
-    arquivos_salvos.insert(0, capa_path)
-
-    merger = PdfMerger()
-    for file_path in arquivos_salvos:
-        merger.append(file_path)
-
-    final_path = os.path.join(app.config['UPLOAD_FOLDER'], "final.pdf")
-    merger.write(final_path)
-    merger.close()
-
-    return send_file(final_path, as_attachment=True, download_name="Inscricao_OAB_ES.pdf")
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    # Merge all
