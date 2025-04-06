@@ -4,27 +4,23 @@
     <meta charset="UTF-8">
     <title>Envio de Documentos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
 </head>
 <body>
     <div class="container">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
         <h1>Envio de Documentos</h1>
-        <p>Envie os documentos abaixo. Cada um deve ser enviado individualmente.</p>
+        <p>Envie cada documento individualmente. Certifique-se de completar todos os campos antes de gerar o PDF final.</p>
 
         <div class="formulario">
             {% for doc in documentos %}
                 <div class="campo-upload">
-                    <label for="arquivo{{ loop.index0 }}">{{ doc }}</label>
-
-                    {% if "Reservista" in doc %}
-                        <input type="checkbox" id="nao_possui{{ loop.index0 }}" onchange="toggleInput({{ loop.index0 }})">
-                        <label for="nao_possui{{ loop.index0 }}">Não possuo</label>
-                    {% endif %}
-
                     <form action="/upload" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="index" value="{{ loop.index0 }}">
-                        <input type="file" name="arquivo" id="arquivo{{ loop.index0 }}" {% if "Reservista" not in doc %}required{% endif %}>
+                        <label for="arquivo{{ loop.index0 }}">{{ doc }}</label><br>
+                        <input type="file" name="arquivo" id="arquivo{{ loop.index0 }}">
+                        {% if doc == "Certificado de Reservista (para homens)" %}
+                            <label><input type="checkbox" name="nao_possui"> Não possuo</label>
+                        {% endif %}
+                        <button type="submit">Enviar</button>
                     </form>
                 </div>
             {% endfor %}
@@ -32,30 +28,22 @@
 
         {% if arquivos %}
             <div class="confirmacao">
-                <p><strong>Documentos enviados:</strong></p>
+                <h3>Documentos enviados:</h3>
                 <ul>
                     {% for nome in arquivos %}
                         <li>{{ nome }}</li>
                     {% endfor %}
                 </ul>
+
                 <form action="/gerar_pdf" method="post">
                     <button type="submit">Gerar PDF Final</button>
+                </form>
+
+                <form action="/limpar" method="post" style="margin-top: 10px;">
+                    <button type="submit">Limpar Todos os Arquivos</button>
                 </form>
             </div>
         {% endif %}
     </div>
-
-    <script>
-        function toggleInput(index) {
-            const checkbox = document.getElementById("nao_possui" + index);
-            const input = document.getElementById("arquivo" + index);
-            input.disabled = checkbox.checked;
-            if (checkbox.checked) {
-                input.removeAttribute("required");
-            } else {
-                input.setAttribute("required", "required");
-            }
-        }
-    </script>
 </body>
 </html>
