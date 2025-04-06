@@ -13,7 +13,7 @@
         </header>
         <form action="/gerar_pdf" method="POST" enctype="multipart/form-data">
             <div class="documentos">
-                {% for i, doc in enumerate(documentos) %}
+                {% for i, doc in documentos %}
                 <div class="documento">
                     <label for="arquivo_{{ i }}">{{ doc }}</label>
                     <input type="file" name="arquivo_{{ i }}" id="arquivo_{{ i }}" required>
