@@ -13,7 +13,6 @@ DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
     "Requerimento de inscrição no Conselho Federal da OAB",
     "Histórico Escolar com diploma ou colação de grau (autenticado)",
-    "Certidão Negativa Cartório Distribuidor Justiça Federal",
     "Certificado de Aprovação em Exame de Ordem",
     "Certidão Negativa - Cartório Distribuidor do Crime",
     "Certidão Negativa - Cartório Distribuidor do Cível",
