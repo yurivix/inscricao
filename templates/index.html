@@ -1,155 +1,29 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { PDFDocument } from "pdf-lib";
-
-const documentos = [
-  "Requerimento de inscrição da OAB-ES",
-  "Requerimento de inscrição no Conselho Federal da OAB",
-  "Histórico Escolar com diploma ou colação de grau (autenticado)",
-  "Certidão Negativa Cartório Distribuidor Justiça Federal",
-  "Certificado de Aprovação em Exame de Ordem",
-  "Certidão Negativa - Cartório Distribuidor do Crime",
-  "Certidão Negativa - Cartório Distribuidor do Cível",
-  "Certidão Negativa - Cartório Distribuidor da Família",
-  "Certidão Negativa - Cartório Distribuidor do Crime Federal 2ª Região",
-  "Certidão Negativa - Cartório Distribuidor Cível Federal 2ª Região",
-  "Declaração de atividade, função ou cargo (com ou sem atividade)",
-  "Declaração de atividade da pessoa jurídica vinculada",
-  "Certidão de quitação eleitoral",
-  "RG",
-  "CPF",
-  "Título de Eleitor (frente/verso)",
-  "Certificado de Reservista (para homens)",
-  "Comprovante de residência atualizado",
-  "Declaração de responsabilidade das informações"
-];
-
-export default function UploadInscricao() {
-  const [arquivos, setArquivos] = useState({});
-  const [mensagem, setMensagem] = useState("");
-  const [gerando, setGerando] = useState(false);
-  const [naoPossuiReservista, setNaoPossuiReservista] = useState(false);
-
-  const handleChange = (e, index) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setArquivos(prev => ({ ...prev, [index]: file }));
-  };
-
-  const handleSubmit = async () => {
-    setGerando(true);
-    const pdfDoc = await PDFDocument.create();
-
-    for (let i = 0; i < documentos.length; i++) {
-      if (i === 16 && naoPossuiReservista) continue;
-      const file = arquivos[i];
-      if (!file) continue;
-
-      if (file.type === "application/pdf") {
-        const bytes = await file.arrayBuffer();
-        const donorPdfDoc = await PDFDocument.load(bytes);
-        const copiedPages = await pdfDoc.copyPages(donorPdfDoc, donorPdfDoc.getPageIndices());
-        copiedPages.forEach((page) => pdfDoc.addPage(page));
-      } else if (file.type.startsWith("image/")) {
-        const imageBytes = await file.arrayBuffer();
-        let image;
-        if (file.type === "image/jpeg") {
-          image = await pdfDoc.embedJpg(imageBytes);
-        } else if (file.type === "image/png") {
-          image = await pdfDoc.embedPng(imageBytes);
-        }
-        if (image) {
-          const page = pdfDoc.addPage([image.width, image.height]);
-          page.drawImage(image, {
-            x: 0,
-            y: 0,
-            width: image.width,
-            height: image.height,
-          });
-        }
-      }
-    }
-
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'Inscricao_OAB_ES.pdf';
-    link.click();
-    URL.revokeObjectURL(url);
-    setMensagem("PDF gerado com sucesso!");
-    setGerando(false);
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold mb-4">Inscrição OAB-ES</h1>
-      {documentos.map((doc, i) => (
-        <Card key={i}>
-          <CardContent className="p-4 space-y-2">
-            <label className="block font-semibold">{i + 1}. {doc}</label>
-            {i === 16 ? (
-              <>
-                <Input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleChange(e, i)}
-                  disabled={naoPossuiReservista}
-                />
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="checkbox"
-                    checked={naoPossuiReservista}
-                    onChange={(e) => setNaoPossuiReservista(e.target.checked)}
-                    id="naoPossui"
-                  />
-                  <label htmlFor="naoPossui">Não possuo</label>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Envio de Documentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Envio de Documentos</h1>
+        <form action="/gerar_pdf" method="post" enctype="multipart/form-data">
+            {% for i, doc in enumerate(documentos) %}
+                <div class="campo-upload">
+                    <label for="doc{{ i }}">{{ i + 1 }}. {{ doc }}</label>
+                    {% if i == 16 %}
+                        <input type="file" name="arquivo{{ i }}" id="doc{{ i }}">
+                        <label>
+                            <input type="checkbox" name="nao_possui_reservista" value="true"> Não possuo
+                        </label>
+                    {% else %}
+                        <input type="file" name="arquivo{{ i }}" id="doc{{ i }}" required>
+                    {% endif %}
                 </div>
-              </>
-            ) : (
-              <Input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleChange(e, i)}
-              />
-            )}
-          </CardContent>
-        </Card>
-      ))}
-
-      <Button
-        onClick={handleSubmit}
-        className="w-full"
-        disabled={gerando}
-      >
-        Gerar PDF Final
-      </Button>
-
-      {gerando && (
-        <p className="text-center text-sm text-gray-600">Gerando PDF...</p>
-      )}
-
-      {mensagem && (
-        <div className="text-center mt-4 text-green-600 font-semibold">
-          {mensagem}
-        </div>
-      )}
-
-      <Button
-        onClick={() => {
-          setArquivos({});
-          setMensagem("");
-          setGerando(false);
-          setNaoPossuiReservista(false);
-        }}
-        variant="outline"
-        className="mt-4 w-full"
-      >
-        Limpar todos os arquivos
-      </Button>
+            {% endfor %}
+            <button type="submit">Gerar PDF Final</button>
+        </form>
     </div>
-  );
-}
+</body>
+</html>
