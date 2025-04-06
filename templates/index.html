@@ -38,6 +38,7 @@
             border-radius: 6px;
         }
         input[type="checkbox"] {
+            margin-top: 10px;
             margin-right: 8px;
         }
         .form-group {
@@ -76,13 +77,15 @@
             {% for i, doc in documentos %}
             <div class="form-group">
                 <label for="arquivo_{{ i }}">{{ doc }}</label>
-                <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}"
-                       {% if doc not in documentos_opcionais %} required {% endif %}>
+
                 {% if doc == "Certificado de Reservista (para homens)" %}
-                <label>
-                    <input type="checkbox" name="nao_possui_reservista" value="1">
-                    Não possuo Certificado de Reservista
-                </label>
+                    <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}">
+                    <label>
+                        <input type="checkbox" name="nao_possui_reservista" value="1">
+                        Não possuo Certificado de Reservista
+                    </label>
+                {% else %}
+                    <input type="file" id="arquivo_{{ i }}" name="arquivo_{{ i }}" required>
                 {% endif %}
             </div>
             {% endfor %}
