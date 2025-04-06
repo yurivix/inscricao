@@ -8,15 +8,26 @@ app = Flask(__name__)
 # Configurações
 UPLOAD_FOLDER = 'uploads'
 DOCUMENTOS = [
-    "Documento de Identidade",
-    "CPF",
-    "Título de Eleitor",
-    "Comprovante de Residência",
-    "Diploma de Graduação",
-    "Certidão de Quitação Eleitoral",
-    "Foto 3x4",
-    "Comprovante de Pagamento",
-    "Certidão de Antecedentes Criminais"
+    "Requerimento de inscrição da OAB-ES",
+     "Requerimento de inscrição no Conselho Federal da OAB",
+  "Histórico Escolar com diploma ou colação de grau (autenticado)",
+  "Certidão Negativa Cartório Distribuidor Justiça Federal",
+  "Certificado de Aprovação em Exame de Ordem",
+  "Certidão Negativa - Cartório Distribuidor do Crime",
+  "Certidão Negativa - Cartório Distribuidor do Cível",
+  "Certidão Negativa - Cartório Distribuidor da Família",
+  "Certidão Negativa - Cartório Distribuidor do Crime Federal 2ª Região",
+  "Certidão Negativa - Cartório Distribuidor Cível Federal 2ª Região",
+  "Declaração de atividade, função ou cargo (com ou sem atividade)",
+  "Declaração de atividade da pessoa jurídica vinculada",
+  "Certidão de quitação eleitoral",
+  "RG",
+  "CPF",
+  "Título de Eleitor (frente/verso)",
+  "Certificado de Reservista (para homens)",
+  "Comprovante de residência atualizado",
+  "Declaração de responsabilidade das informaçõe"
+    
 ]
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
