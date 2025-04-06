@@ -1,97 +1,104 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Inscrição OAB-ES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-vuZuTnZCn1t7KtvS5DDvEqnBz4FRfRqa7pHPzWbkqRaFf6yik3HBNHqLcbg2L1Jbbkoy1fQf3BAvcISnbcHBhA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f9f9f9;
-            padding: 2rem;
-            max-width: 800px;
-            margin: auto;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+            margin: 0;
         }
-
+        .container {
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
         h1 {
             text-align: center;
-            color: #003366;
+            color: #005baa;
         }
-
-        form {
-            background-color: #fff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
         label {
             display: block;
-            margin: 1rem 0 0.3rem;
+            margin-top: 20px;
             font-weight: bold;
         }
-
-        input[type="file"],
-        input[type="text"] {
+        input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 0.5rem;
-            margin-bottom: 1rem;
+            padding: 10px;
+            margin-top: 5px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-
-        input[type="checkbox"] {
-            margin-right: 8px;
+        .file-input {
+            margin-bottom: 15px;
         }
-
-        .doc-block {
-            margin-bottom: 1.2rem;
+        .checkbox {
+            margin-top: 10px;
         }
-
         button {
-            background-color: #003366;
-            color: #fff;
-            padding: 0.8rem 1.2rem;
+            background-color: #005baa;
+            color: white;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 12px 20px;
+            margin-top: 20px;
             width: 100%;
-            font-size: 1rem;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
         }
-
         button:hover {
-            background-color: #005599;
+            background-color: #003f7f;
         }
-
-        .info {
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            color: #555;
+        .documento {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
+<div class="container">
     <h1>Inscrição OAB-ES</h1>
-    <form method="post" action="/gerar_pdf" enctype="multipart/form-data">
+    <form action="/gerar_pdf" method="post" enctype="multipart/form-data" id="formulario">
         <label for="nome_completo">Nome completo:</label>
         <input type="text" name="nome_completo" id="nome_completo" required>
 
-        <div class="doc-block">
-            <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista" value="true">
-            <label for="nao_possui_reservista" style="display: inline;">Não possuo Certificado de Reservista</label>
+        <div id="documentos-container">
+            {% for i, doc in documentos %}
+                <div class="documento" id="doc_{{ i }}">
+                    <label>{{ doc }}</label>
+                    {% if "Reservista" in doc %}
+                        <input type="file" name="arquivos" accept=".pdf">
+                        <div class="checkbox">
+                            <input type="checkbox" id="nao_possui_reservista" name="nao_possui_reservista" value="true">
+                            <label for="nao_possui_reservista">Não possuo Certificado de Reservista</label>
+                        </div>
+                    {% else %}
+                        <input type="file" name="arquivos" required accept=".pdf" class="file-input" placeholder="Anexe o arquivo">
+                    {% endif %}
+                </div>
+            {% endfor %}
         </div>
-
-        {% for i, doc in documentos %}
-        <div class="doc-block">
-            <label for="doc_{{ i }}">{{ doc }}</label>
-            <input type="file" name="arquivos" id="doc_{{ i }}" required>
-        </div>
-        {% endfor %}
 
         <button type="submit">Gerar PDF</button>
-
-        <div class="info">
-            Todos os documentos são obrigatórios, exceto o Certificado de Reservista, caso você marque a opção "Não possuo".
-        </div>
     </form>
+</div>
+
+<script>
+    const checkbox = document.getElementById("nao_possui_reservista");
+    const reservistaInput = document.querySelector("#doc_16 input[type='file']");
+
+    checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+            reservistaInput.removeAttribute("required");
+        } else {
+            reservistaInput.setAttribute("required", "required");
+        }
+    });
+</script>
 </body>
 </html>
