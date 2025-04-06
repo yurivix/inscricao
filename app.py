@@ -101,7 +101,7 @@ Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF vál
                 erro_pdf.output(erro_stream)
                 erro_stream.seek(0)
                 merger.append(erro_stream)
-        else:
+        elif doc_nome != "Certificado de Reservista (para homens)":
             aviso_pdf = FPDF()
             aviso_pdf.add_page()
             aviso_pdf.set_font("Arial", "", 14)
