@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, make_response
+from flask import Flask, render_template, request, send_file
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import os
@@ -33,7 +33,7 @@ DOCUMENTOS = [
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html", documentos=enumerate(DOCUMENTOS))
+    return render_template("index.html", documentos=list(enumerate(DOCUMENTOS)))
 
 @app.route("/gerar_pdf", methods=["POST"])
 def gerar_pdf():
@@ -49,16 +49,19 @@ def gerar_pdf():
 
         encontrado = False
         for file in arquivos:
+            print(f"Tentando casar: {file.filename} com índice {i}")
             if file.filename.startswith(f"{i}_"):
                 filename = secure_filename(file.filename)
                 path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(path)
                 arquivos_salvos.append(path)
+                print(f"Salvo: {filename}")
                 encontrado = True
                 break
 
         if not encontrado:
-            return "Faltando documento obrigatório: " + doc, 400
+            print(f"Não encontrado: {doc}")
+            return f"Faltando documento obrigatório: {doc}", 400
 
     # Cria capa
     capa = FPDF()
@@ -72,7 +75,6 @@ def gerar_pdf():
     capa.set_font("Arial", size=12)
     capa.cell(0, 10, f"Data: {datetime.today().strftime('%d/%m/%Y')}", ln=True, align="C")
 
-    # Caso não possua reservista
     if nao_possui_reservista:
         capa.ln(10)
         capa.set_text_color(200, 0, 0)
