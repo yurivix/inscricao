@@ -1,29 +1,93 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Envio de Documentos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Inscrição OAB-ES</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Envio de Documentos</h1>
-        <form action="/gerar_pdf" method="post" enctype="multipart/form-data">
-            {% for i, doc in enumerate(documentos) %}
-                <div class="campo-upload">
-                    <label for="doc{{ i }}">{{ i + 1 }}. {{ doc }}</label>
-                    {% if i == 16 %}
-                        <input type="file" name="arquivo{{ i }}" id="doc{{ i }}">
-                        <label>
-                            <input type="checkbox" name="nao_possui_reservista" value="true"> Não possuo
-                        </label>
-                    {% else %}
-                        <input type="file" name="arquivo{{ i }}" id="doc{{ i }}" required>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            <button type="submit">Gerar PDF Final</button>
-        </form>
-    </div>
+  <h1>Inscrição OAB-ES</h1>
+  <form id="formulario" enctype="multipart/form-data">
+    <div id="documentos-container"></div>
+
+    <label>
+      <input type="checkbox" id="nao_possui_reservista">
+      Não possuo Certificado de Reservista
+    </label>
+
+    <br><br>
+    <button type="submit">Gerar PDF Final</button>
+  </form>
+
+  <div id="mensagem"></div>
+
+  <script>
+    const documentos = [
+      "Requerimento de inscrição da OAB-ES",
+      "Requerimento de inscrição no Conselho Federal da OAB",
+      "Histórico Escolar com diploma ou colação de grau (autenticado)",
+      "Certidão Negativa Cartório Distribuidor Justiça Federal",
+      "Certificado de Aprovação em Exame de Ordem",
+      "Certidão Negativa - Cartório Distribuidor do Crime",
+      "Certidão Negativa - Cartório Distribuidor do Cível",
+      "Certidão Negativa - Cartório Distribuidor da Família",
+      "Certidão Negativa - Cartório Distribuidor do Crime Federal 2ª Região",
+      "Certidão Negativa - Cartório Distribuidor Cível Federal 2ª Região",
+      "Declaração de atividade, função ou cargo (com ou sem atividade)",
+      "Declaração de atividade da pessoa jurídica vinculada",
+      "Certidão de quitação eleitoral",
+      "RG",
+      "CPF",
+      "Título de Eleitor (frente/verso)",
+      "Certificado de Reservista (para homens)",
+      "Comprovante de residência atualizado",
+      "Declaração de responsabilidade das informações"
+    ];
+
+    const container = document.getElementById("documentos-container");
+
+    documentos.forEach((doc, index) => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <label>${index + 1}. ${doc}</label><br>
+        <input type="file" name="documento_${index}" id="doc_${index}" accept=".pdf,.jpg,.jpeg,.png"><br><br>
+      `;
+      container.appendChild(div);
+    });
+
+    // Checkbox para Reservista
+    const checkbox = document.getElementById("nao_possui_reservista");
+    checkbox.addEventListener("change", () => {
+      const inputReservista = document.getElementById("doc_16");
+      inputReservista.disabled = checkbox.checked;
+    });
+
+    document.getElementById("formulario").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      formData.append("nao_possui_reservista", checkbox.checked);
+
+      try {
+        const response = await fetch("/gerar_pdf", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error();
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Inscricao_OAB_ES.pdf";
+        a.click();
+        URL.revokeObjectURL(url);
+
+        document.getElementById("mensagem").innerText = "PDF gerado com sucesso!";
+      } catch {
+        document.getElementById("mensagem").innerText = "Erro ao gerar o PDF.";
+      }
+    });
+  </script>
 </body>
 </html>
