@@ -1,11 +1,13 @@
-from flask import Flask, request, send_file
-from flask_cors import CORS
+from flask import Flask, render_template, request, send_file
+from werkzeug.utils import secure_filename
 from PyPDF2 import PdfMerger
 from PIL import Image
+import os
 import io
 
 app = Flask(__name__)
-CORS(app)  # permite requisições do frontend React
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 documentos = [
     "Requerimento de inscrição da OAB-ES",
@@ -29,56 +31,40 @@ documentos = [
     "Declaração de responsabilidade das informações"
 ]
 
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html", documentos=documentos)
+
 @app.route("/gerar_pdf", methods=["POST"])
 def gerar_pdf():
-    arquivos = request.files.getlist("arquivos")
-    nao_possui_reservista = request.form.get("nao_possui_reservista") == "true"
-
-    arquivos_ordenados = [None] * len(documentos)
-
-    # Atribui arquivos à posição correta baseado no nome enviado (index_nome)
-    for arquivo in arquivos:
-        filename = arquivo.filename
-        if "_" in filename:
-            index_str, _ = filename.split("_", 1)
-            try:
-                index = int(index_str)
-                arquivos_ordenados[index] = arquivo
-            except ValueError:
-                continue
-
-    # Se o candidato marcou "Não possuo", pulamos o arquivo 16 (reservista)
-    if nao_possui_reservista:
-        arquivos_ordenados[16] = None
-
     merger = PdfMerger()
-
-    for arquivo in arquivos_ordenados:
-        if not arquivo:
+    for i, doc_nome in enumerate(documentos):
+        # Pular Certificado de Reservista se marcado como "não possui"
+        if i == 16 and request.form.get("nao_possui_reservista") == "true":
             continue
 
-        filename = arquivo.filename.lower()
+        file = request.files.get(f"arquivo{i}")
+        if not file:
+            continue
 
-        if filename.endswith((".jpg", ".jpeg", ".png")):
-            img = Image.open(arquivo.stream).convert("RGB")
-            img_io = io.BytesIO()
-            img.save(img_io, format="PDF")
-            img_io.seek(0)
-            merger.append(img_io)
-        elif filename.endswith(".pdf"):
-            merger.append(arquivo.stream)
+        filename = secure_filename(f"{i:02d}_{doc_nome}.pdf")
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
 
-    output = io.BytesIO()
-    merger.write(output)
+        if file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            image = Image.open(file.stream).convert("RGB")
+            image.save(filepath, "PDF")
+        elif file.filename.lower().endswith(".pdf"):
+            file.save(filepath)
+        else:
+            continue
+
+        merger.append(filepath)
+
+    output_pdf = os.path.join(UPLOAD_FOLDER, "Inscricao_OAB_ES_Final.pdf")
+    merger.write(output_pdf)
     merger.close()
-    output.seek(0)
 
-    return send_file(
-        output,
-        as_attachment=True,
-        download_name="Inscricao_OAB_ES.pdf",
-        mimetype="application/pdf"
-    )
+    return send_file(output_pdf, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
