@@ -37,7 +37,11 @@ DOCUMENTOS = [
 
 @app.route('/')
 def index():
-    return render_template_string(open('templates/index.html').read(), documentos=DOCUMENTOS)
+    html = open('templates/index.html').read()
+    html += """
+    <p style='color:red'><strong>Observação:</strong> Cada arquivo deve ter no máximo 2 MB. Somente arquivos em PDF são aceitos.</p>
+    """
+    return render_template_string(html, documentos=DOCUMENTOS)
 
 @app.route('/gerar_pdf', methods=['POST'])
 def gerar_pdf():
