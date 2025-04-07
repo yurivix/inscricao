@@ -4,12 +4,15 @@ import io
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfMerger
 from fpdf import FPDF
-from PIL import Image
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # Limite total para todos os uploads combinados (50 MB)
+
+MAX_FILE_SIZE_MB = 2  # Limite individual por arquivo
+MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
 
 DOCUMENTOS = [
     "Requerimento de inscrição da OAB-ES",
@@ -74,36 +77,44 @@ O candidato declarou que não possui este documento.""")
 
         file = info["file"]
         if file:
-            filename = file.filename.lower()
+            file.stream.seek(0, os.SEEK_END)
+            file_length = file.stream.tell()
+            file.stream.seek(0)
 
-            # Página com o nome do documento
-            nome_pdf = FPDF()
-            nome_pdf.add_page()
-            nome_pdf.set_font("Arial", "B", 16)
-            nome_pdf.multi_cell(0, 10, doc_nome)
-            nome_output = nome_pdf.output(dest='S').encode('latin1')
-            nome_stream = io.BytesIO(nome_output)
-            merger.append(nome_stream)
+            if file_length > MAX_FILE_SIZE:
+                aviso_pdf = FPDF()
+                aviso_pdf.add_page()
+                aviso_pdf.set_font("Arial", "", 14)
+                aviso_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
+O arquivo excede o tamanho máximo permitido de {MAX_FILE_SIZE_MB} MB.""")
+                aviso_output = aviso_pdf.output(dest='S').encode('latin1')
+                aviso_stream = io.BytesIO(aviso_output)
+                merger.append(aviso_stream)
+                continue
+
+        if file and file.filename.lower().endswith(".pdf") and file.mimetype == "application/pdf":
             try:
-                if filename.endswith(".pdf"):
-                    file.stream.seek(0)
-                    merger.append(file.stream)
-                elif filename.endswith(('.png', '.jpg', '.jpeg')):
-                    image = Image.open(file.stream).convert('RGB')
-                    image_pdf_stream = io.BytesIO()
-                    image.save(image_pdf_stream, format="PDF")
-                    image_pdf_stream.seek(0)
-                    merger.append(image_pdf_stream)
-                else:
-                    raise ValueError("Formato inválido")
+                file.stream.seek(0)
+
+                # Página com o nome do documento
+                nome_pdf = FPDF()
+                nome_pdf.add_page()
+                nome_pdf.set_font("Arial", "B", 16)
+                nome_pdf.multi_cell(0, 10, doc_nome)
+                nome_output = nome_pdf.output(dest='S').encode('latin1')
+                nome_stream = io.BytesIO(nome_output)
+                merger.append(nome_stream)
+
+                # Documento em si
+                merger.append(file.stream)
             except Exception:
                 erro_pdf = FPDF()
                 erro_pdf.add_page()
                 erro_pdf.set_font("Arial", "", 14)
                 erro_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
-Erro ao processar o arquivo. Verifique se ele está corrompido ou em formato aceito (PDF ou imagem).""")
+Erro ao processar o arquivo. Verifique se ele está corrompido ou é um PDF válido.""")
                 erro_output = erro_pdf.output(dest='S').encode('latin1')
                 erro_stream = io.BytesIO(erro_output)
                 merger.append(erro_stream)
@@ -113,7 +124,7 @@ Erro ao processar o arquivo. Verifique se ele está corrompido ou em formato ace
             aviso_pdf.set_font("Arial", "", 14)
             aviso_pdf.multi_cell(0, 10, f"""{doc_nome}:
 
-Arquivo não enviado ou formato inválido. Somente arquivos PDF ou imagens são aceitos.""")
+Arquivo não enviado ou formato inválido. Somente arquivos PDF são aceitos.""")
             aviso_output = aviso_pdf.output(dest='S').encode('latin1')
             aviso_stream = io.BytesIO(aviso_output)
             merger.append(aviso_stream)
