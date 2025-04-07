@@ -1,96 +1,60 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Inscrição OAB-ES</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6fa;
-            margin: 0;
-            padding: 0;
-            color: #1e1e1e;
-        }
-        .container {
-            max-width: 700px;
-            margin: auto;
-            padding: 20px;
-            background-color: white;
-            margin-top: 30px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            border-top: 10px solid #002856;
-        }
-        h2 {
-            color: #002856;
-            text-align: center;
-        }
-        label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-        input[type="text"],
-        input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-        input[type="submit"] {
-            background-color: #ce1126;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-        }
-        input[type="submit"]:hover {
-            background-color: #a50e1a;
-        }
-        .checkbox {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: -10px;
-            margin-bottom: 15px;
-        }
-        @media screen and (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-            h2 {
-                font-size: 20px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Upload de Documentos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #003366;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 700px;
+    }
+    .alert {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h2>Inscrição na OAB-ES</h2>
-    <form method="POST" action="/gerar_pdf" enctype="multipart/form-data">
-        <label for="nome">Nome completo do candidato:</label>
-        <input type="text" id="nome" name="nome" required>
+  <h1>Envio de Documentos - Inscrição OAB-ES</h1>
 
-        {% for doc in documentos %}
-            {% if doc == "Certificado de Reservista (para homens)" %}
-                <label>{{ doc }}</label>
-                <input type="file" name="{{ doc }}" accept="application/pdf">
-                <div class="checkbox">
-                    <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista">
-                    <label for="nao_possui_reservista">Não possuo</label>
-                </div>
-            {% else %}
-                <label for="{{ doc }}">{{ doc }}</label>
-                <input type="file" name="{{ doc }}" accept="application/pdf">
-            {% endif %}
-        {% endfor %}
+  <div class="alert">
+    <strong>Aviso:</strong> Cada arquivo deve ter <strong>no máximo 2 MB</strong> e deve estar no formato <strong>PDF</strong>.
+  </div>
 
-        <input type="submit" value="Gerar PDF">
-    </form>
-</div>
+  <form method="POST" action="/gerar_pdf" enctype="multipart/form-data">
+    <label for="nome">Nome completo:</label><br>
+    <input type="text" name="nome" id="nome" required style="width:100%; margin-bottom: 20px;"><br>
+
+    {% for documento in documentos %}
+      <label>{{ documento }}</label><br>
+      <input type="file" name="{{ documento }}" accept="application/pdf" required><br><br>
+      {% if documento == "Certificado de Reservista (para homens)" %}
+        <input type="checkbox" name="nao_possui_reservista" id="nao_possui_reservista">
+        <label for="nao_possui_reservista">Não possuo este documento</label><br><br>
+      {% endif %}
+    {% endfor %}
+
+    <button type="submit">Gerar PDF</button>
+  </form>
 </body>
 </html>
